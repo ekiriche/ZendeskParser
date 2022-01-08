@@ -39,7 +39,7 @@ class Parser {
                 const sectionArticles = Object.values(section.articles);
 
                 for (const article of sectionArticles) {
-                    this.createArticle(article, sectionDirectoryName);
+                    await this.createArticle(article, sectionDirectoryName);
                 }
             }
         }
@@ -51,7 +51,7 @@ class Parser {
     createArticle = async (article, sectionDirectoryName) => {
         const fileName = `${sectionDirectoryName}/${formatDirName(article.name)}.md`;
 
-        // await downloadAllImages(article);
+        await downloadAllImages(article);
 
         await remapLinks(article, this.categories);
 

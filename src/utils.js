@@ -4,12 +4,14 @@ const path = require('path');
 
 const mediaDirName = `${path.resolve('./')}/media`;
 
-const formatDirName = (name) => {
+const formatDirName = (name, removeDot = true) => {
     if (!name) {
         return null;
     }
 
-    return name.toLowerCase().trim().replace(/\s/g, '-').replace(/\?|'|"|:/g, '').replace(/\//g, 'and');
+    const regexRemove = removeDot ? /\?|'|"|:|\./g : /\?|'|"|:/g;
+
+    return name.toLowerCase().trim().replace(/\s/g, '-').replace(regexRemove, '').replace(/\//g, 'and');
 }
 
 const downloadAllImages = async (article) => {
@@ -44,7 +46,7 @@ const downloadFromUrl = async (url, articleDirName) => {
     try {
         const response = await axios(url, { responseType: 'arraybuffer' });
 
-        const fileName = `${articleDirName}/${formatDirName(url.split('/').pop())}`;
+        const fileName = `${articleDirName}/${formatDirName(url.split('/').pop(), false)}`;
 
         await fs.writeFile(fileName, response.data, (e) => {
             if (e) console.log(e);
