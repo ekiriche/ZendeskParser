@@ -1,6 +1,6 @@
 const axios = require("axios");
 const fs = require('fs');
-const { formatDirName, downloadAllImages, remapLinks, mediaDirName } = require('./utils');
+const { formatDirName, downloadAllImages, remapLinks, createTocFile, mediaDirName } = require('./utils');
 const path = require('path');
 
 class Parser {
@@ -22,30 +22,35 @@ class Parser {
 
         const categoryIds = Object.keys(this.categories);
 
+        await fs.writeFile(`${this.rootDir}/index.yml`, 'undefined', (e) => e && console.log(e));
+
+        await createTocFile(Object.values(this.categories), this.rootDir, true);
+
         for (const categoryId of categoryIds) {
             await this.fetchArticles(categoryId, 0);
 
             const categoryDirectoryName = `${this.rootDir}/${formatDirName(this.categories[categoryId].name)}`;
 
-            await fs.mkdir(categoryDirectoryName, (e) => e && console.error(e));
+            fs.mkdirSync(categoryDirectoryName, (e) => e && console.error(e));
 
             const sections = Object.values(this.categories[categoryId].sections);
+
+            await createTocFile(sections, categoryDirectoryName, true);
 
             for (const section of sections) {
                 const sectionDirectoryName = `${categoryDirectoryName}/${formatDirName(section.name)}`;
 
-                await fs.mkdir(sectionDirectoryName, (e) => e && console.error(e));
+                fs.mkdirSync(sectionDirectoryName, (e) => e && console.error(e));
 
                 const sectionArticles = Object.values(section.articles);
+
+                await createTocFile(sectionArticles, sectionDirectoryName);
 
                 for (const article of sectionArticles) {
                     await this.createArticle(article, sectionDirectoryName);
                 }
             }
         }
-        // console.log(this.categories['200181433'].sections['200294859'].articles['202953495'].body);
-        // await downloadAllImages(this.categories['200181433'].sections['200294859'].articles['202953495']);
-        // console.log("FINISHED");
     }
 
     createArticle = async (article, sectionDirectoryName) => {

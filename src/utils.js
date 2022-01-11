@@ -14,6 +14,18 @@ const formatDirName = (name, removeDot = true) => {
     return name.toLowerCase().trim().replace(/\s/g, '-').replace(regexRemove, '').replace(/\//g, 'and');
 }
 
+const createTocFile = async (entities, path, linkToYml = false) => {
+    const yamlBody = entities.reduce((acc = null, entity) => {
+        acc = `${acc ? `${acc}\n` : ''}` +
+            `- name: "${entity.name}"\n` +
+            `  href: "${formatDirName(entity.name)}${linkToYml ? '/toc.yml' : '.md'}"`;
+
+        return acc;
+    }, null);
+
+    await fs.writeFile(`${path}/toc.yml`, yamlBody, (e) => e && console.error(e));
+}
+
 const downloadAllImages = async (article) => {
     const regex = /<img.*?src="(.*?)"[^>]+>/g;
 
@@ -84,7 +96,7 @@ const remapLinks = async (article, categories) => {
         return acc;
     }, []);
 
-    console.log(articleIds);
+    // console.log(articleIds);
 
     const categoriesValues = Object.values(categories);
 
@@ -107,7 +119,7 @@ const remapLinks = async (article, categories) => {
             if (foundArticle && foundSection) {
                 const linkDocReference = `../../${formatDirName(category.name)}/${formatDirName(foundSection.name)}/${formatDirName(foundArticle.name)}.md`;
 
-                console.log(linkDocReference);
+                // console.log(linkDocReference);
 
                 article.body = article.body.replace(urls[i], linkDocReference);
 
@@ -122,5 +134,6 @@ module.exports = {
     formatDirName,
     downloadAllImages,
     remapLinks,
+    createTocFile,
     mediaDirName,
 };
