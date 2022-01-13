@@ -1,6 +1,7 @@
 const axios = require("axios");
 const fs = require('fs');
 const { formatDirName, downloadAllImages, remapLinks, createTocFile, mediaDirName } = require('./utils');
+const { createRootIndexFile, createSectionIndexFile } = require('./createIndexFiles');
 const path = require('path');
 
 class Parser {
@@ -26,6 +27,8 @@ class Parser {
 
         await createTocFile(Object.values(this.categories), this.rootDir, true);
 
+        await createRootIndexFile();
+
         for (const categoryId of categoryIds) {
             await this.fetchArticles(categoryId, 0);
 
@@ -46,6 +49,8 @@ class Parser {
 
                 await createTocFile(sectionArticles, sectionDirectoryName);
 
+                await createSectionIndexFile(section, sectionDirectoryName);
+
                 for (const article of sectionArticles) {
                     await this.createArticle(article, sectionDirectoryName);
                 }
@@ -56,9 +61,9 @@ class Parser {
     createArticle = async (article, sectionDirectoryName) => {
         const fileName = `${sectionDirectoryName}/${formatDirName(article.name)}.md`;
 
-        await downloadAllImages(article);
+        // await downloadAllImages(article);
 
-        await remapLinks(article, this.categories);
+        // await remapLinks(article, this.categories);
 
         const body = '---\n' +
             `title: "${article.title}"\n` +
@@ -93,9 +98,14 @@ class Parser {
         const response = await axios(`https://takelessons.zendesk.com/api/v2/help_center/en-us/sections?page=${page}&per_page=100`)
 
         response.data.sections.forEach(section => {
+            if (section.id === 202595226) {
+                console.log(section);
+            }
+
             if (this.categories[section.category_id]) {
                 this.categories[section.category_id].sections[section.id] = {
                     name: section.name,
+                    description: section.description,
                     categoryId: section.category_id,
                     articles: {}
                 }
