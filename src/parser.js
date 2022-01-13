@@ -1,7 +1,7 @@
 const axios = require("axios");
 const fs = require('fs');
 const { formatDirName, downloadAllImages, remapLinks, createTocFile, mediaDirName } = require('./utils');
-const { createRootIndexFile, createSectionIndexFile } = require('./createIndexFiles');
+const { createRootIndexFile, createSectionIndexFile, createCategoryIndexFile } = require('./createIndexFiles');
 const path = require('path');
 
 class Parser {
@@ -21,24 +21,24 @@ class Parser {
         await this.fetchCategories();
         await this.fetchSections(0);
 
-        const categoryIds = Object.keys(this.categories);
-
         await fs.writeFile(`${this.rootDir}/index.yml`, 'undefined', (e) => e && console.log(e));
 
-        await createTocFile(Object.values(this.categories), this.rootDir, true);
+        const categories = Object.values(this.categories);
 
-        await createRootIndexFile();
+        await createTocFile(categories, this.rootDir, true);
+        await createRootIndexFile(categories);
 
-        for (const categoryId of categoryIds) {
-            await this.fetchArticles(categoryId, 0);
+        for (const category of categories) {
+            await this.fetchArticles(category.id, 0);
 
-            const categoryDirectoryName = `${this.rootDir}/${formatDirName(this.categories[categoryId].name)}`;
+            const categoryDirectoryName = `${this.rootDir}/${formatDirName(category.name)}`;
 
             fs.mkdirSync(categoryDirectoryName, (e) => e && console.error(e));
 
-            const sections = Object.values(this.categories[categoryId].sections);
+            const sections = Object.values(category.sections);
 
             await createTocFile(sections, categoryDirectoryName, true);
+            await createCategoryIndexFile(category, categoryDirectoryName);
 
             for (const section of sections) {
                 const sectionDirectoryName = `${categoryDirectoryName}/${formatDirName(section.name)}`;
@@ -48,7 +48,6 @@ class Parser {
                 const sectionArticles = Object.values(section.articles);
 
                 await createTocFile(sectionArticles, sectionDirectoryName);
-
                 await createSectionIndexFile(section, sectionDirectoryName);
 
                 for (const article of sectionArticles) {
@@ -61,9 +60,9 @@ class Parser {
     createArticle = async (article, sectionDirectoryName) => {
         const fileName = `${sectionDirectoryName}/${formatDirName(article.name)}.md`;
 
-        // await downloadAllImages(article);
+        await downloadAllImages(article);
 
-        // await remapLinks(article, this.categories);
+        await remapLinks(article, this.categories);
 
         const body = '---\n' +
             `title: "${article.title}"\n` +
@@ -86,6 +85,7 @@ class Parser {
 
         this.categories = response.data.categories.reduce((acc , category) => {
             acc[category.id] = {
+                id: category.id,
                 name: category.name,
                 sections: {}
             };
@@ -98,10 +98,6 @@ class Parser {
         const response = await axios(`https://takelessons.zendesk.com/api/v2/help_center/en-us/sections?page=${page}&per_page=100`)
 
         response.data.sections.forEach(section => {
-            if (section.id === 202595226) {
-                console.log(section);
-            }
-
             if (this.categories[section.category_id]) {
                 this.categories[section.category_id].sections[section.id] = {
                     name: section.name,
