@@ -67,14 +67,9 @@ class Parser {
         const body = '---\n' +
             `title: "${article.title}"\n` +
             `description: "${article.title}"\n` +
-            'ms.custom: ""\n' +
+            'ms.service: takelessons' +
             `ms.date: "${article.createdAt}"\n` +
             'ms.prod: TakeLessons\n' +
-            'ms.prod_service: connectivity\n' +
-            'ms.reviewer: ""\n' +
-            'ms.technology: connectivity\n' +
-            'ms.topic: conceptual\n' +
-            `author: ${article.authorId}\n` +
             '---\n' + article.body;
 
         await fs.writeFile(fileName, body, (e) => e && console.log(e));
