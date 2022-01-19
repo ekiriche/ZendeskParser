@@ -23,7 +23,7 @@ const createRootIndexFile = async (categories) => {
             return acc;
         }, null);
 
-    await fs.writeFile('docs/index.yml', body, (e) => e && console.log(e));
+    fs.writeFileSync('docs/index.yml', body, (e) => e && console.log(e));
 }
 
 const createCategoryIndexFile = async (category, path) => {
@@ -43,15 +43,16 @@ const createCategoryIndexFile = async (category, path) => {
         '  - title: Articles\n' +
         '    linkLists:\n' +
         '      - linkListType: overview\n' +
+        '        links:\n' +
         sections.reduce((acc = null, section) => {
             acc = `${acc ? `${acc}\n` : ''}` +
-                `        - text: "${section.name}"\n` +
-                `          url: ${formatDirName(section.name)}`;
+                `          - text: "${section.name}"\n` +
+                `            url: ${formatDirName(section.name)}`;
 
             return acc;
         }, null);
 
-    await fs.writeFile(`${path}/index.yml`, body, (e) => e && console.log(e));
+    fs.writeFileSync(`${path}/index.yml`, body, (e) => e && console.log(e));
 }
 
 const createSectionIndexFile = async (section, path) => {
@@ -71,15 +72,16 @@ const createSectionIndexFile = async (section, path) => {
         '  - title: Articles\n' +
         '    linkLists:\n' +
         '      - linkListType: overview\n' +
+        '        links:\n' +
         articles.reduce((acc = null, article) => {
             acc = `${acc ? `${acc}\n` : ''}` +
-                `        - text: "${article.name}"\n` +
-                `          url: ${formatDirName(article.name)}.md`;
+                `          - text: "${article.name}"\n` +
+                `            url: ${formatDirName(article.name)}.md`;
 
             return acc;
         }, null);
 
-    await fs.writeFile(`${path}/index.yml`, body, (e) => e && console.log(e));
+    fs.writeFileSync(`${path}/index.yml`, body, (e) => e && console.log(e));
 }
 
 module.exports = {

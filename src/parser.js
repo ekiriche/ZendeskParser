@@ -1,6 +1,6 @@
 const axios = require("axios");
 const fs = require('fs');
-const { formatDirName, downloadAllImages, remapLinks, createTocFile, mediaDirName } = require('./utils');
+const { formatDirName, downloadAllImages, remapLinks, createTocFile, createRootTocFile, mediaDirName } = require('./utils');
 const { createRootIndexFile, createSectionIndexFile, createCategoryIndexFile } = require('./createIndexFiles');
 const path = require('path');
 
@@ -10,22 +10,24 @@ class Parser {
 
     constructor() {
         fs.rmSync(this.rootDir, { recursive: true, force: true }, () => {})
-        fs.rmSync(mediaDirName, { recursive: true, force: true }, () => {})
+        // fs.rmSync(mediaDirName, { recursive: true, force: true }, () => {})
         fs.mkdirSync(this.rootDir, () => {})
         fs.mkdirSync(mediaDirName, () => {})
     }
 
     fetchAll = async () => {
+        console.log('=================== START ===================');
+
         this.categories = {};
 
         await this.fetchCategories();
         await this.fetchSections(0);
 
-        await fs.writeFile(`${this.rootDir}/index.yml`, 'undefined', (e) => e && console.log(e));
+        fs.writeFileSync(`${this.rootDir}/index.yml`, 'undefined', (e) => e && console.log(e));
 
         const categories = Object.values(this.categories);
 
-        await createTocFile(categories, this.rootDir, true);
+        await createRootTocFile(categories, this.rootDir);
         await createRootIndexFile(categories);
 
         for (const category of categories) {
@@ -51,10 +53,12 @@ class Parser {
                 await createSectionIndexFile(section, sectionDirectoryName);
 
                 for (const article of sectionArticles) {
-                    await this.createArticle(article, sectionDirectoryName);
+                    this.createArticle(article, sectionDirectoryName);
                 }
             }
         }
+
+        // console.log('================== FINISH ==================');
     }
 
     createArticle = async (article, sectionDirectoryName) => {
@@ -72,7 +76,7 @@ class Parser {
             'ms.prod: TakeLessons\n' +
             '---\n' + article.body;
 
-        await fs.writeFile(fileName, body, (e) => e && console.log(e));
+        fs.writeFileSync(fileName, body, (e) => e && console.log(e));
     }
 
     fetchCategories = async () => {

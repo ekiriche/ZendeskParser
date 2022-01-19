@@ -1,8 +1,9 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const got = require('got');
 
-const mediaDirName = `${path.resolve('./')}/media`;
+const mediaDirName = `${path.resolve('./')}/docs/media`;
 
 const formatDirName = (name, removeDot = true) => {
     if (!name) {
@@ -23,7 +24,21 @@ const createTocFile = async (entities, path, linkToYml = false) => {
         return acc;
     }, null);
 
-    await fs.writeFile(`${path}/toc.yml`, yamlBody, (e) => e && console.error(e));
+    fs.writeFileSync(`${path}/toc.yml`, yamlBody, (e) => e && console.error(e));
+}
+
+const createRootTocFile = async (categories, path) => {
+    const yamlBody = '- name: "TakeLessons"\n' +
+        '  href: "index.yml"\n' +
+        categories.reduce((acc = null, category) => {
+            acc = `${acc ? `${acc}\n` : ''}` +
+                `- name: "${category.name}"\n` +
+                `  href: "${formatDirName(category.name)}/toc.yml"`;
+
+            return acc;
+    }, null);
+
+    fs.writeFileSync(`${path}/toc.yml`, yamlBody, (e) => e && console.error(e));
 }
 
 const downloadAllImages = async (article) => {
@@ -35,10 +50,11 @@ const downloadAllImages = async (article) => {
         return;
     }
 
-    const articleDirName = `${mediaDirName}/${formatDirName(article.name)}`;
+    const articleName = formatDirName(article.name);
+    const articleDirName = `${mediaDirName}/${articleName}`;
 
     if (!fs.existsSync(articleDirName)) {
-        await fs.mkdir(articleDirName, (e) => e && console.log(e));
+        fs.mkdirSync(articleDirName, (e) => e && console.log(e));
     }
 
     for (const img of images) {
@@ -48,25 +64,40 @@ const downloadAllImages = async (article) => {
             url = `https://support.takelessons.com${url}`;
         }
 
-        const newImgSrc = await downloadFromUrl(url, articleDirName, article, img);
+        const newImgSrc = await downloadFromUrl(url, articleDirName, articleName);
 
         article.body = article.body.replace(img, newImgSrc);
     }
 }
 
-const downloadFromUrl = async (url, articleDirName) => {
+const downloadImage = async (url) => {
     try {
-        const response = await axios(url, { responseType: 'arraybuffer' });
+        return await axios.get(url, { responseType: 'arraybuffer', timeout: 10000 });
+    } catch (e) {
+        console.log(e);
+        return e.response ? null : await downloadImage(url);
+    }
+}
 
-        const fileName = `${articleDirName}/${formatDirName(url.split('/').pop(), false)}`;
+const downloadFromUrl = async (url, articleDirName, articleName) => {
+    try {
+        console.log(url, articleDirName);
 
-        await fs.writeFile(fileName, response.data, (e) => {
+        const response = await downloadImage(url);
+
+        if (!response) {
+            return url;
+        }
+
+        const fileName = formatDirName(url.split('/').pop(), false);
+
+        fs.writeFileSync(`${articleDirName}/${fileName}`, response.data, (e) => {
             if (e) console.log(e);
         });
 
-        return fileName;
+        return `../../media/${articleName}/${fileName}`;
     } catch (e) {
-        // console.log(url, articleDirName);
+        console.log(e, url, articleDirName);
         return url;
     }
 }
@@ -95,8 +126,6 @@ const remapLinks = async (article, categories) => {
 
         return acc;
     }, []);
-
-    // console.log(articleIds);
 
     const categoriesValues = Object.values(categories);
 
@@ -135,5 +164,6 @@ module.exports = {
     downloadAllImages,
     remapLinks,
     createTocFile,
+    createRootTocFile,
     mediaDirName,
 };
