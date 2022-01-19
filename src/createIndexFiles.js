@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { formatDirName } = require('./utils');
+const { formatDirName, escapeQuotes } = require('./utils');
 
 const createRootIndexFile = async (categories) => {
     const body = `title: TakeLessons Support Center\n` +
@@ -16,7 +16,7 @@ const createRootIndexFile = async (categories) => {
         '  items:\n' +
         categories.reduce((acc = null, category) => {
             acc = `${acc ? `${acc}\n` : ''}` +
-                `    - title: "${category.name}"\n` +
+                `    - title: "${escapeQuotes(category.name)}"\n` +
                 '      itemType: overview\n' +
                 `      url: ${formatDirName(category.name)}`;
 
@@ -29,11 +29,11 @@ const createRootIndexFile = async (categories) => {
 const createCategoryIndexFile = async (category, path) => {
     const sections = Object.values(category.sections);
 
-    const body = `title: ${category.name}\n` +
+    const body = `title: "${escapeQuotes(category.name)}"\n` +
         `summary: Support topics and FAQs\n` +
         '\n' +
         'metadata:\n' +
-        `  title: ${category.name}\n` +
+        `  title: "${escapeQuotes(category.name)}"\n` +
         `  description: Support topics and FAQs\n` +
         '  ms.service: takelessons #Required; service per approved list. service slug assigned to your service by ACOM.\n' +
         '  ms.topic: landing-page\n' +
@@ -46,7 +46,7 @@ const createCategoryIndexFile = async (category, path) => {
         '        links:\n' +
         sections.reduce((acc = null, section) => {
             acc = `${acc ? `${acc}\n` : ''}` +
-                `          - text: "${section.name}"\n` +
+                `          - text: "${escapeQuotes(section.name)}"\n` +
                 `            url: ${formatDirName(section.name)}`;
 
             return acc;
@@ -58,12 +58,12 @@ const createCategoryIndexFile = async (category, path) => {
 const createSectionIndexFile = async (section, path) => {
     const articles = Object.values(section.articles);
 
-    const body = `title: ${section.name}\n` +
-        `summary: ${section.description} \n` +
+    const body = `title: "${escapeQuotes(section.name)}"\n` +
+        `summary: "${escapeQuotes(section.description)}"\n` +
         '\n' +
         'metadata:\n' +
-        `  title: ${section.name}\n` +
-        `  description: ${section.description}\n` +
+        `  title: "${escapeQuotes(section.name)}"\n` +
+        `  description: "${escapeQuotes(section.description)}"\n` +
         '  ms.service: takelessons #Required; service per approved list. service slug assigned to your service by ACOM.\n' +
         '  ms.topic: landing-page\n' +
         '  ms.date: 13/01/2022\n' +
@@ -75,7 +75,7 @@ const createSectionIndexFile = async (section, path) => {
         '        links:\n' +
         articles.reduce((acc = null, article) => {
             acc = `${acc ? `${acc}\n` : ''}` +
-                `          - text: "${article.name}"\n` +
+                `          - text: "${escapeQuotes(article.name)}"\n` +
                 `            url: ${formatDirName(article.name)}.md`;
 
             return acc;

@@ -10,15 +10,20 @@ const formatDirName = (name, removeDot = true) => {
         return null;
     }
 
-    const regexRemove = removeDot ? /\?|'|"|:|\./g : /\?|'|"|:/g;
+    // const regexRemove = removeDot ? /\?|'|"|:|,|\./g : /\?|'|"|:|,/g;
+    const regexRemove = removeDot ? /[^a-zA-Z0-9[\-_\s]/g : /[^a-zA-Z0-9.[\-_\s]/g;
 
     return name.toLowerCase().trim().replace(/\s/g, '-').replace(regexRemove, '').replace(/\//g, 'and');
+}
+
+const escapeQuotes = (string) => {
+    return string.replace(/"/g, '\\"');
 }
 
 const createTocFile = async (entities, path, linkToYml = false) => {
     const yamlBody = entities.reduce((acc = null, entity) => {
         acc = `${acc ? `${acc}\n` : ''}` +
-            `- name: "${entity.name}"\n` +
+            `- name: "${escapeQuotes(entity.name)}"\n` +
             `  href: "${formatDirName(entity.name)}${linkToYml ? '/toc.yml' : '.md'}"`;
 
         return acc;
@@ -32,7 +37,7 @@ const createRootTocFile = async (categories, path) => {
         '  href: "index.yml"\n' +
         categories.reduce((acc = null, category) => {
             acc = `${acc ? `${acc}\n` : ''}` +
-                `- name: "${category.name}"\n` +
+                `- name: "${escapeQuotes(category.name)}"\n` +
                 `  href: "${formatDirName(category.name)}/toc.yml"`;
 
             return acc;
@@ -165,5 +170,6 @@ module.exports = {
     remapLinks,
     createTocFile,
     createRootTocFile,
+    escapeQuotes,
     mediaDirName,
 };
