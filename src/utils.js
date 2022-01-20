@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const got = require('got');
+const dayjs = require('dayjs');
 
 const mediaDirName = `${path.resolve('./')}/docs/media`;
 
@@ -79,14 +79,14 @@ const downloadImage = async (url) => {
     try {
         return await axios.get(url, { responseType: 'arraybuffer', timeout: 10000 });
     } catch (e) {
-        console.log(e);
+        // console.log(e);
         return e.response ? null : await downloadImage(url);
     }
 }
 
 const downloadFromUrl = async (url, articleDirName, articleName) => {
     try {
-        console.log(url, articleDirName);
+        // console.log(url, articleDirName);
 
         const response = await downloadImage(url);
 
@@ -102,11 +102,12 @@ const downloadFromUrl = async (url, articleDirName, articleName) => {
 
         return `../../media/${articleName}/${fileName}`;
     } catch (e) {
-        console.log(e, url, articleDirName);
+        console.log(url, articleDirName);
         return url;
     }
 }
 
+/** It does not remap links with no articleId in it, damn */
 const remapLinks = async (article, categories) => {
     const regex = /<a.*?href="(.*?)"/g
 
@@ -161,7 +162,10 @@ const remapLinks = async (article, categories) => {
             }
         }
     }
+}
 
+const getCurrentFormattedDate = () => {
+    return dayjs().format('M/D/YYYY');
 }
 
 module.exports = {
@@ -171,5 +175,6 @@ module.exports = {
     createTocFile,
     createRootTocFile,
     escapeQuotes,
+    getCurrentFormattedDate,
     mediaDirName,
 };

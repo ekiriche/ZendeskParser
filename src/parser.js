@@ -1,16 +1,17 @@
 const axios = require("axios");
 const fs = require('fs');
-const { formatDirName, downloadAllImages, remapLinks, createTocFile, createRootTocFile, mediaDirName } = require('./utils');
+const { formatDirName, downloadAllImages, remapLinks, createTocFile, createRootTocFile, getCurrentFormattedDate, mediaDirName } = require('./utils');
 const { createRootIndexFile, createSectionIndexFile, createCategoryIndexFile } = require('./createIndexFiles');
 const path = require('path');
 
 class Parser {
     categories = {};
     rootDir = `${path.resolve('./')}/docs`;
+    createdArticles = 0;
+    totalArticles = 0;
 
     constructor() {
         fs.rmSync(this.rootDir, { recursive: true, force: true }, () => {})
-        // fs.rmSync(mediaDirName, { recursive: true, force: true }, () => {})
         fs.mkdirSync(this.rootDir, () => {})
         fs.mkdirSync(mediaDirName, () => {})
     }
@@ -19,6 +20,7 @@ class Parser {
         console.log('=================== START ===================');
 
         this.categories = {};
+        this.createdArticles = 0;
 
         await this.fetchCategories();
         await this.fetchSections(0);
@@ -32,7 +34,9 @@ class Parser {
 
         for (const category of categories) {
             await this.fetchArticles(category.id, 0);
+        }
 
+        for (const category of categories) {
             const categoryDirectoryName = `${this.rootDir}/${formatDirName(category.name)}`;
 
             fs.mkdirSync(categoryDirectoryName, (e) => e && console.error(e));
@@ -57,8 +61,6 @@ class Parser {
                 }
             }
         }
-
-        // console.log('================== FINISH ==================');
     }
 
     createArticle = async (article, sectionDirectoryName) => {
@@ -68,15 +70,24 @@ class Parser {
 
         await remapLinks(article, this.categories);
 
+        const articleTitle = article.title.trim();
+
         const body = '---\n' +
-            `title: "${article.title}"\n` +
-            `description: "${article.title}"\n` +
-            'ms.service: takelessons' +
-            `ms.date: "${article.createdAt}"\n` +
-            'ms.prod: TakeLessons\n' +
-            '---\n' + article.body;
+            `title: "${articleTitle}"\n` +
+            `description: "${articleTitle}"\n` +
+            'author: kyrychevg\n' +
+            'ms.service: takelessons\n' +
+            `ms.date: ${getCurrentFormattedDate()}\n` +
+            'ms.author: v-yevheniik@microsoft.com\n' +
+            '---\n' +
+            '\n' +
+            `# ${articleTitle}\n` + article.body;
 
         fs.writeFileSync(fileName, body, (e) => e && console.log(e));
+
+        this.createdArticles++;
+
+        console.log(`================== CREATED ARTICLE ${this.createdArticles}/${this.totalArticles} ==================`)
     }
 
     fetchCategories = async () => {
@@ -130,7 +141,9 @@ class Parser {
                     categoryId,
                 }
             }
-        })
+        });
+
+        this.totalArticles += response.data.articles.length;
 
         if (response.data.next_page) {
             await this.fetchArticles(categoryId, response.data.page + 1);
